@@ -1,0 +1,73 @@
+import pandas as pd
+from sklearn.cross_validation import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix, cohen_kappa_score
+X = raw.ix[:,1:29]
+Y = raw.Class
+X_train, X_test, Y_train, Y_test = train_test_split(X,Y,test_size = 0.3)
+lr = LogisticRegression()
+lr.fit(X_train, Y_train)
+Y_pred = lr.predict(X_test)
+cnf_matrix = confusion_matrix(Y_test, Y_pred)
+print cnf_matrix
+print 'Accuracy: ' + str(np.round(100*float((cnf_matrix[0]0]+cnf_matrix[1][1])/float((cnf_matrix[0][0]+cnf_matrix[1][1] + cnf_matrix[1][0] + cnf_matrix[0][1])),2))+'%'
+print 'Cohen Kappa: ' + str(np.round(cohen_kappa_score(Y_test, Y_pred),3))
+print 'Recall: ' + str(np.round(100*float((cnf_matrix[1][1]))/float((cnf_matrix[1][0]+cnf_matrix[1][1])),2))+'%'
+
+[[85284    15]
+ [   50    94]]
+Accuracy: 99.92%
+Cohen Kappa: 0.743
+Recall: 65.28%
+
+Here the accuracy is high, but the accuracy of the null model is also high. The recall is fairly poor; we let 35% of fraudulent transactions through the model.
+Random forest
+
+A random forest is another model which perfectly suits this problem. A random forest uses decision trees and a clever resampling trick to correct for a common overfitting issue with simpler decision-tree models.
+
+rf = RandomForestClassifier(n_estimators = , n_jobs =4)
+rf.fit(X_train, Y_train)
+Y_rf_pred = rf.predict(X_test)
+cnf_matrix = confusion_matrix(Y_rf_pred, Y_test)
+print cnf_matrix
+print 'Accuracy: ' + str(np.round(100*float((cnf_matrix[0][0]+cnf_matrix[1][1]))/float((cnf_matrix[0][0]+cnf_matrix[1][1] + cnf_matrix[1][0] + cnf_matrix[0][1])),2))+'%'
+print 'Cohen Kappa: ' + str(np.round(cohen_kappa_score(Y_undersampled_test, Y_undersampled_pred),3))
+print 'Recall: ' + str(np.round(100*float((cnf_matrix[1][1]))/float((cnf_matrix[1][0]+cnf_matrix[1][1])),2))+'%'
+
+[[85293    27]
+ [    6   117]]
+Accuracy: 99.96%
+Cohen Kappa: 0.668
+Recall: 95.12%
+
+The random forest model actual performs very well on this dataset. My guess is that there are a few features which control almost all of the behaviour here.
+Using undersampling
+
+One final way to improve models with an unbalanced dataset like this is to use undersampling. This means training the model on a training set where the “normal” data is undersampled so it has the same size as the fraudulent data.
+Logistic regression
+
+fraud_records = len(raw[raw.Class == 1])
+fraud_indices = raw[raw.Class == 1].index
+normal_indices = raw[raw.Class == 0].index
+under_sample_indices = np.random.choice(normal_indices, fraud_records, False)
+raw_undersampled = raw.iloc[np.concatenate([fraud_indices,under_sample_indices]),:]
+X_undersampled = raw_undersampled.ix[:,1:29]
+Y_undersampled = raw_undersampled.Class
+X_undersampled_train, X_undersampled_test, Y_undersampled_train, Y_undersampled_test = train_test_split(X_undersampled,Y_undersampled,test_size = 0.3)
+lr_undersampled = LogisticRegression(C=1)
+Y_full_pred = lr_undersampled.predict(X_test)
+cnf_matrix = confusion_matrix(Y_test, Y_full_pred)
+print cnf_matrix
+print 'Accuracy: ' + str(np.round(100*float((cnf_matrix[0][0]+cnf_matrix[1][1]))/float((cnf_matrix[0][0]+cnf_matrix[1][1] + cnf_matrix[1][0] + cnf_matrix[0][1])),2))+'%'
+print 'Recall: ' + str(np.round(100*float((cnf_matrix[1][1]))/float((cnf_matrix[1][0]+cnf_matrix[1][1])),2))+'%'
+
+[[82625  2674]
+ [   11   133]]
+Accuracy: 96.86%
+Recall: 92.36%
+
+Note that the recall for logistic regression is much better now. Undersampling will not improve the random forest performance since the subtlety is already built into this model.
+
+Detecting credit card fraud in Python was published on February 18, 2017.
+
